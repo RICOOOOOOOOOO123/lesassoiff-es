@@ -61,14 +61,20 @@ function ajouterRobinet(
 
     imageActif: loadImage(fichierActif),
 
-    son: loadSound(fichierSon),
+    // Le son n'est PAS chargé au démarrage
+    son: null,
+
+    // On garde simplement le nom du fichier
+    fichierSon: fichierSon,
 
     x: x,
     y: y,
 
     largeur: largeur,
 
-    actif: false
+    actif: false,
+
+    sonCharge: false
   };
 
   robinets.push(robinet);
@@ -924,29 +930,77 @@ function toggleRobinet(robinet) {
 
   userStartAudio();
 
-  if (!robinet.actif) {
+  // =============================
+  // SI LE ROBINET EST DÉJÀ ACTIF
+  // =============================
 
-    robinet.actif = true;
-
-    if (robinet.son && robinet.son.isLoaded()) {
-
-      robinet.son.play();
-
-      // Quand le son est terminé
-      robinet.son.onended(function() {
-
-        robinet.actif = false;
-
-      });
-    }
-
-  } else {
+  if (robinet.actif) {
 
     robinet.actif = false;
 
     if (robinet.son && robinet.son.isPlaying()) {
       robinet.son.stop();
     }
+
+    return;
+  }
+
+
+  // =============================
+  // PREMIER CLIC :
+  // CHARGEMENT DU SON
+  // =============================
+
+  if (!robinet.sonCharge) {
+
+    robinet.actif = true;
+
+    robinet.son = loadSound(
+      robinet.fichierSon,
+
+      // Quand le son est chargé
+      function() {
+
+        robinet.sonCharge = true;
+
+        robinet.son.play();
+
+        robinet.son.onended(function() {
+          robinet.actif = false;
+        });
+
+      },
+
+      // Erreur de chargement
+      function(error) {
+
+        console.error(
+          "Impossible de charger le son :",
+          robinet.fichierSon,
+          error
+        );
+
+        robinet.actif = false;
+      }
+    );
+
+  }
+
+  // =============================
+  // CLIC SUIVANT :
+  // SON DÉJÀ CHARGÉ
+  // =============================
+
+  else {
+
+    robinet.actif = true;
+
+    robinet.son.play();
+
+    robinet.son.onended(function() {
+      robinet.actif = false;
+    });
+
   }
 }
 
